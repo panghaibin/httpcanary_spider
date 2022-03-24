@@ -1,5 +1,5 @@
 # 项目文件
-*.hyc
+*.hcy
 *.zip
 # Pycharm
 .idea/
