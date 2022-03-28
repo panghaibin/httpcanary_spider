@@ -97,7 +97,7 @@ class ParseRequest:
     def get_host(self):
         return self.request.headers['host']
 
-    def get_url(self):
+    def get_path(self):
         return self.request.path
 
     def get_urlparse(self):
@@ -128,6 +128,11 @@ class ParseRequest:
 
     def check_host(self, regx):
         if re.search(regx, self.get_host()):
+            return True
+        return False
+
+    def check_path(self, regx):
+        if re.search(regx, self.get_path()):
             return True
         return False
 
@@ -191,5 +196,12 @@ class ParseDir:
         parse_files = []
         for parse_file in self.parse_files:
             if parse_file.request.check_host(regx):
+                parse_files.append(parse_file)
+        return parse_files
+
+    def filter_req_path(self, regx):
+        parse_files = []
+        for parse_file in self.parse_files:
+            if parse_file.request.check_path(regx):
                 parse_files.append(parse_file)
         return parse_files
