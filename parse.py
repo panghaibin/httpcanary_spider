@@ -193,21 +193,3 @@ class ParseDir:
             if parse_file.request.check_host(regx):
                 parse_files.append(parse_file)
         return parse_files
-
-
-if __name__ == '__main__':
-    file_dir = r'E:\Python\httpcanary\upload\2022-03-24_22-38-24'
-    parse_dir = ParseDir(file_dir)
-    files = parse_dir.filter_req_host('dianping')
-    print(len(files))
-    for file in files:
-        print(file.file_path)
-        print('request:')
-        file.request.print_readable()
-        # print('response:')
-        # file.response.print_readable()
-        # break
-        print('=' * 10)
-
-    # file_path = r'E:\Python\httpcanary\upload\2022-03-24_22-38-24\http_res_02acd125-6a6f-4788-a3a7-c9903b21f3e7.hcy'
-    # parse_file = ParseResponse(file_path)
