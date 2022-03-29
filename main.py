@@ -2,6 +2,8 @@ import os
 import time
 import zipfile
 from flask import Flask, request
+from parse import ParseDir
+from mtms import MTMSParser
 
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'upload')
 app = Flask(__name__)
@@ -25,6 +27,12 @@ def unZip(ZipFile):
     return extract_path
 
 
+def save_to_db(path):
+    parse_dir_result = ParseDir(path)
+    mtms = MTMSParser(parse_dir_result)
+    mtms.save_all()
+
+
 @app.route('/httpcanary', methods=['GET', 'POST'])
 def httpcanary():
     if request.method == 'POST':
@@ -34,6 +42,8 @@ def httpcanary():
             f2.write(request.get_data())
         path = unZip(Zip)
         print(path)
+        # save_to_db(path)
+
     return 'ok'
 
 
