@@ -71,6 +71,9 @@ class MTMSParser:
     def save_host_product(self):
         self._db.save_host_product(self.host_product)
 
+    def save_product_detail(self):
+        self._db.save_product_detail(self.product_detail)
+
     def save_user_comment(self):
         self._db.save_user_comment(self.user_comment)
 
@@ -80,5 +83,6 @@ class MTMSParser:
     def save_all(self):
         self.save_user_info()
         self.save_host_product()
+        self.save_product_detail()
         self.save_user_comment()
         self.save_product_comment()

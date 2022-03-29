@@ -20,6 +20,12 @@ class DbSaver:
             col.delete_many({'productId': product['productId']})
         col.insert_many(data)
 
+    def save_product_detail(self, data: list):
+        col = self.db["product_detail"]
+        for detail in data:
+            col.delete_many({'productId': detail['productId']})
+        col.insert_many(data)
+
     def save_user_comment(self, data: list):
         col = self.db["user_comment"]
         for comment in data:
