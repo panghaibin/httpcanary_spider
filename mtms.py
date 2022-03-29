@@ -16,7 +16,7 @@ class MTMSParser:
         files = self._parse_dir_result.filter_req_path(r'user/info\?')
         user_info = []
         for file in files:
-            user = file.response.get_json()['data']
+            user = file.response.json['data']
             user_info.append(user)
         return user_info
 
@@ -24,9 +24,9 @@ class MTMSParser:
         files = self._parse_dir_result.filter_req_path(r'searchProduct/listHostProduct\?')
         host_product = []
         for file in files:
-            file_request = file.request.get_json()
+            file_request = file.request.json
             host_id = file_request['hostId']
-            products = file.response.get_json()['data']['list']
+            products = file.response.json['data']['list']
             for product in products:
                 product.update({'hostId': host_id})
             host_product.extend(products)
@@ -36,8 +36,8 @@ class MTMSParser:
         files = self._parse_dir_result.filter_req_path(r'product/detail\?')
         product_detail = []
         for file in files:
-            product_id = file.request.get_json()['productId']
-            data = file.response.get_json()['data']
+            product_id = file.request.json['productId']
+            data = file.response.json['data']
             data.update({'productId': product_id})
             product_detail.append(data)
         return product_detail
@@ -46,8 +46,8 @@ class MTMSParser:
         files = self._parse_dir_result.filter_req_path(r'user/comments\?')
         user_comment = []
         for file in files:
-            user_id = file.request.get_urlparse()['userId'][0]
-            comments = file.response.get_json()['data']['list']
+            user_id = file.request.urlparse['userId'][0]
+            comments = file.response.json['data']['list']
             for comment in comments:
                 comment.update({'userId': user_id})
             user_comment.extend(comments)
@@ -57,8 +57,8 @@ class MTMSParser:
         files = self._parse_dir_result.filter_req_path(r'product/comments\?')
         product_comment = []
         for file in files:
-            product_id = file.request.get_urlparse()['productId'][0]
-            data = file.response.get_json()['data']
+            product_id = file.request.urlparse['productId'][0]
+            data = file.response.json['data']
             comments = data['list']
             for comment in comments:
                 comment.update({'rawProductId': product_id})
