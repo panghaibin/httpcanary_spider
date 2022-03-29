@@ -10,14 +10,17 @@ class DbSaver:
 
     def save_user_info(self, data):
         col = self.db["user_info"]
-        # col.delete_many({'user_id': data['userId']})
+        col.delete_many({'user_id': data['userId']})
         col.insert_one(data)
 
     def save_host_products(self, data):
         col = self.db["host_product"]
-        # col.delete_many({'productId': product['productId']})
+        for product in data:
+            col.delete_many({'productId': product['productId']})
         col.insert_many(data)
 
-    def save_comment(self, data):
-        # TODO
-        pass
+    def save_user_comments(self, data):
+        col = self.db["user_comment"]
+        for comment in data:
+            col.delete_many({'commentId': comment['commentId']})
+        col.insert_many(data)
