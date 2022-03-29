@@ -28,7 +28,7 @@ class MTMSParser:
             host_id = file_request['hostId']
             products = file.response.json['data']['list']
             for product in products:
-                product.update({'hostId': host_id})
+                product.update({'hostId': int(host_id)})
             host_product.extend(products)
         return host_product
 
@@ -38,7 +38,7 @@ class MTMSParser:
         for file in files:
             product_id = file.request.json['productId']
             data = file.response.json['data']
-            data.update({'productId': product_id})
+            data.update({'productId': int(product_id)})
             product_detail.append(data)
         return product_detail
 
@@ -49,7 +49,7 @@ class MTMSParser:
             user_id = file.request.urlparse['userId'][0]
             comments = file.response.json['data']['list']
             for comment in comments:
-                comment.update({'userId': user_id})
+                comment.update({'userId': int(user_id)})
             user_comment.extend(comments)
         return user_comment
 
@@ -61,7 +61,7 @@ class MTMSParser:
             data = file.response.json['data']
             comments = data['list']
             for comment in comments:
-                comment.update({'rawProductId': product_id})
+                comment.update({'rawProductId': int(product_id)})
             product_comment.extend(comments)
         return product_comment
 

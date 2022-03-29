@@ -35,7 +35,7 @@ class HTTPRequest(BaseHTTPRequestHandler):
 class ParseResponse:
     def __init__(self, file_path):
         self.file_path = file_path
-        logging.info('[+] Reading file: {}'.format(file_path))
+        logging.debug('[+] Reading file: {}'.format(file_path))
         with open(file_path, 'rb') as f:
             self.file_content = f.read()
         self.response = self._response_from_bytes(self.file_content)
@@ -112,7 +112,7 @@ class ParseRequest:
         try:
             return json.loads(raw_data.decode('utf-8'))
         except json.JSONDecodeError:
-            logging.info('[-] Error: {} {}'.format(self.file_path, 'json decode error'))
+            logging.debug('[-] Error: {} {}'.format(self.file_path, 'json decode error'))
             return None
 
     def print_urlparse(self):
@@ -162,7 +162,7 @@ class ParseFile:
             self.req_path = self.file_path.replace('http_res', 'http_req')
             self.res_path = self.file_path
         else:
-            logging.info('[-] Error: {}'.format(self.file_path))
+            logging.debug('[-] Error: {}'.format(self.file_path))
         return
 
 
@@ -187,7 +187,7 @@ class ParseDir:
                 parse_file = ParseFile(file_path)
                 parse_files.append(parse_file)
             except Exception as e:
-                logging.info('[-] Error: {} - {}'.format(file_path, e), end='')
+                logging.debug('[-] Error: {} - {}'.format(file_path, e))
                 continue
         return parse_files
 
