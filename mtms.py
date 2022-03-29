@@ -9,16 +9,17 @@ class MTMSParser:
         self.user_info = self.get_user_info()
         self.host_products = self.get_host_products()
         self.user_comments = self.get_user_comments()
+        self.product_comments = self.get_product_comments()
 
     def get_user_info(self):
-        files = self._parse_dir_result.filter_req_path(r'user/info')
+        files = self._parse_dir_result.filter_req_path(r'user/info\?')
         user_info = {}
         for file in files:
             user_info.update(file.response.get_json()['data'])
         return user_info
 
     def get_host_products(self):
-        files = self._parse_dir_result.filter_req_path(r'searchProduct/listHostProduct')
+        files = self._parse_dir_result.filter_req_path(r'searchProduct/listHostProduct\?')
         host_products = []
         for file in files:
             file_request = file.request.get_json()
@@ -30,7 +31,7 @@ class MTMSParser:
         return host_products
 
     def get_user_comments(self):
-        files = self._parse_dir_result.filter_req_path(r'user/comments')
+        files = self._parse_dir_result.filter_req_path(r'user/comments\?')
         user_comments = []
         for file in files:
             user_id = file.request.get_urlparse()['userId'][0]
@@ -40,6 +41,18 @@ class MTMSParser:
             user_comments.extend(comments)
         return user_comments
 
+    def get_product_comments(self):
+        files = self._parse_dir_result.filter_req_path(r'product/comments\?')
+        product_comments = []
+        for file in files:
+            product_id = file.request.get_urlparse()['productId'][0]
+            data = file.response.get_json()['data']
+            comments = data['list']
+            for comment in comments:
+                comment.update({'rawProductId': product_id})
+            product_comments.extend(comments)
+        return product_comments
+
     def save_user_info(self):
         self._db.save_user_info(self.user_info)
 
@@ -48,3 +61,6 @@ class MTMSParser:
 
     def save_user_comments(self):
         self._db.save_user_comments(self.user_comments)
+
+    def save_product_comments(self):
+        self._db.save_product_comments(self.product_comments)
