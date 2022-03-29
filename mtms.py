@@ -13,7 +13,7 @@ class MTMSParser:
         self.product_comment = self.get_product_comment()
 
     def get_user_info(self):
-        files = self._parse_dir_result.filter_req_path(r'user/info\?')
+        files = self._parse_dir_result.filter_req_path(r'user/info\/')
         user_info = []
         for file in files:
             user = file.response.json['data']

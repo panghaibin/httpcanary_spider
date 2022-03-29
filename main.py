@@ -18,7 +18,7 @@ def GetHttpCanaryFileName():
 
 def unZip(ZipFile):
     extPath = ZipFile[ZipFile.rfind("\\") + 1:][:-4]
-    print(extPath)
+    # print(extPath)
     file = zipfile.ZipFile(ZipFile, 'r')
     extract_path = os.path.join('.', app.config['UPLOAD_FOLDER'], extPath)
     for f in file.namelist():
