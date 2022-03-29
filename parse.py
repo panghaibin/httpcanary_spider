@@ -39,6 +39,8 @@ class ParseResponse:
         with open(file_path, 'rb') as f:
             self.file_content = f.read()
         self.response = self._response_from_bytes(self.file_content)
+        self.json = self.get_json()
+        self.urlparse = self.get_urlparse()
 
     @staticmethod
     def _response_from_bytes(data):
@@ -60,10 +62,10 @@ class ParseResponse:
         return parse_qs(urlparse(self.response.data.decode('utf-8')).query)
 
     def print_json(self):
-        print(json.dumps(self.get_json(), indent=4, ensure_ascii=False))
+        print(json.dumps(self.json, indent=4, ensure_ascii=False))
 
     def print_urlparse(self):
-        print(json.dumps(self.get_urlparse(), indent=4, ensure_ascii=False))
+        print(json.dumps(self.urlparse, indent=4, ensure_ascii=False))
 
     def print_readable(self):
         try:
@@ -78,6 +80,8 @@ class ParseRequest:
         with open(file_path, 'rb') as f:
             self.file_content = f.read()
         self.request = self._request_from_bytes(self.file_content)
+        self.json = self.get_json()
+        self.urlparse = self.get_urlparse()
 
     @staticmethod
     def _request_from_bytes(data):
@@ -108,19 +112,14 @@ class ParseRequest:
         try:
             return json.loads(raw_data.decode('utf-8'))
         except json.JSONDecodeError:
+            logging.info('[-] Error: {} {}'.format(self.file_path, 'json decode error'))
             return None
 
     def print_urlparse(self):
-        try:
-            print(json.dumps(self.get_urlparse(), indent=4, ensure_ascii=False))
-        except Exception as e:
-            logging.info('[-] Error: {} {}'.format(self.file_path, e))
+        print(json.dumps(self.urlparse, indent=4, ensure_ascii=False))
 
     def print_json(self):
-        try:
-            print(json.dumps(self.get_json(), indent=4, ensure_ascii=False))
-        except Exception as e:
-            logging.info('[-] Error: {} {}'.format(self.file_path, e))
+        print(json.dumps(self.json, indent=4, ensure_ascii=False))
 
     def print_readable(self):
         self.print_urlparse()

@@ -7,66 +7,78 @@ class MTMSParser:
         self._db = DbSaver()
         self._parse_dir_result = parse_dir_result
         self.user_info = self.get_user_info()
-        self.host_products = self.get_host_products()
-        self.user_comments = self.get_user_comments()
-        self.product_comments = self.get_product_comments()
+        self.host_product = self.get_host_product()
+        self.product_detail = self.get_product_detail()
+        self.user_comment = self.get_user_comment()
+        self.product_comment = self.get_product_comment()
 
     def get_user_info(self):
         files = self._parse_dir_result.filter_req_path(r'user/info\?')
-        user_info = {}
+        user_info = []
         for file in files:
-            user_info.update(file.response.get_json()['data'])
+            user = file.response.get_json()['data']
+            user_info.append(user)
         return user_info
 
-    def get_host_products(self):
+    def get_host_product(self):
         files = self._parse_dir_result.filter_req_path(r'searchProduct/listHostProduct\?')
-        host_products = []
+        host_product = []
         for file in files:
             file_request = file.request.get_json()
             host_id = file_request['hostId']
             products = file.response.get_json()['data']['list']
             for product in products:
                 product.update({'hostId': host_id})
-            host_products.extend(products)
-        return host_products
+            host_product.extend(products)
+        return host_product
 
-    def get_user_comments(self):
+    def get_product_detail(self):
+        files = self._parse_dir_result.filter_req_path(r'product/detail\?')
+        product_detail = []
+        for file in files:
+            product_id = file.request.get_json()['productId']
+            data = file.response.get_json()['data']
+            data.update({'productId': product_id})
+            product_detail.append(data)
+        return product_detail
+
+    def get_user_comment(self):
         files = self._parse_dir_result.filter_req_path(r'user/comments\?')
-        user_comments = []
+        user_comment = []
         for file in files:
             user_id = file.request.get_urlparse()['userId'][0]
             comments = file.response.get_json()['data']['list']
             for comment in comments:
                 comment.update({'userId': user_id})
-            user_comments.extend(comments)
-        return user_comments
+            user_comment.extend(comments)
+        return user_comment
 
-    def get_product_comments(self):
+    def get_product_comment(self):
         files = self._parse_dir_result.filter_req_path(r'product/comments\?')
-        product_comments = []
+        product_comment = []
         for file in files:
             product_id = file.request.get_urlparse()['productId'][0]
             data = file.response.get_json()['data']
             comments = data['list']
             for comment in comments:
                 comment.update({'rawProductId': product_id})
-            product_comments.extend(comments)
-        return product_comments
+            product_comment.extend(comments)
+        return product_comment
 
     def save_user_info(self):
         self._db.save_user_info(self.user_info)
 
-    def save_host_products(self):
-        self._db.save_host_products(self.host_products)
+    def save_host_product(self):
+        self._db.save_host_product(self.host_product)
 
-    def save_user_comments(self):
-        self._db.save_user_comments(self.user_comments)
+    def save_user_comment(self):
+        self._db.save_user_comment(self.user_comment)
 
-    def save_product_comments(self):
-        self._db.save_product_comments(self.product_comments)
+    def save_product_comment(self):
+        self._db.save_product_comment(self.product_comment)
 
     def save_all(self):
         self.save_user_info()
-        self.save_host_products()
-        self.save_user_comments()
-        self.save_product_comments()
+        self.save_host_product()
+        self.save_user_comment()
+        self.save_product_comment()
