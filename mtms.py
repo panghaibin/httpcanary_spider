@@ -7,7 +7,7 @@ from urllib.parse import urlencode
 
 class MTMSParser:
     def __init__(self, parse_dir_result: ParseDir):
-        self._db = DbSaver()
+        self._db = DatabaseUtils()
         self._parse_dir_result = parse_dir_result
         self.user_info = self.get_user_info()
         self.host_product = self.get_host_product()
@@ -112,7 +112,7 @@ class MTMSParser:
 class MTMSComment:
     def __init__(self, parse_dir_result: ParseDir):
         self._mtms_parser = parse_dir_result
-        self._db = DbSaver()
+        self._db = DatabaseUtils()
         self.product_comment = self._mtms_parser.filter_req_path(r'product/comments\?')
         self.need_more_product_comment = {}
         self.check_more_product_comment()

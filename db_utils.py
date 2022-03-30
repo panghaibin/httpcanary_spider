@@ -5,7 +5,7 @@ MONGO_PATH = "mongodb://localhost:27017"
 logging.basicConfig(level=logging.INFO)
 
 
-class DbSaver:
+class DatabaseUtils:
     def __init__(self):
         self.client = pymongo.MongoClient(MONGO_PATH)
         self.db = self.client["mtms"]
@@ -87,3 +87,124 @@ class DbSaver:
             col.insert_one(comment)
             ic += 1
         logging.info('product ext comment, delete %s, insert %s', dc, ic)
+
+    # def get_user_info_all(self):
+    #     col = self.db["user_info"]
+    #     return col.find()
+    #
+    # def get_user_info_by_uid(self, user_id):
+    #     col = self.db["user_info"]
+    #     return col.find_one({'userId': user_id})
+    #
+    # def get_host_product_all(self):
+    #     col = self.db["host_product"]
+    #     return col.find()
+    #
+    # def get_host_product_by_pid(self, product_id):
+    #     col = self.db["host_product"]
+    #     return col.find_one({'productId': product_id})
+    #
+    # def get_host_product_by_uid(self, user_id):
+    #     col = self.db["host_product"]
+    #     return col.find({'hostId': user_id})
+    #
+    # def get_user_comment_all(self):
+    #     col = self.db["user_comment"]
+    #     return col.find()
+    #
+    # def get_user_comment_by_uid(self, user_id):
+    #     col = self.db["user_comment"]
+    #     return col.find({'userId': user_id})
+    #
+    # def get_user_comment_by_pid(self, product_id):
+    #     col = self.db["user_comment"]
+    #     return col.find({'rawProductId': product_id})
+    #
+    # def get_user_comment_by_oid(self, order_id):
+    #     col = self.db["user_comment"]
+    #     return col.find({'orderId': order_id})
+
+    def get_product_detail_all(self):
+        col = self.db["product_detail"]
+        return col.find()
+
+    def get_product_detail_by_pid(self, product_id):
+        col = self.db["product_detail"]
+        return col.find_one({'rawProductId': product_id})
+
+    def get_product_detail_by_uid(self, user_id):
+        col = self.db["product_detail"]
+        return col.find({'hostInfo': {'userId': user_id}})
+
+    def get_product_comment_all(self):
+        col = self.db["product_comment"]
+        return col.find()
+
+    def get_product_comment_by_uid(self, user_id):
+        product_ids = self.get_product_detail_by_uid(user_id)
+        product_ids = [product['productId'] for product in product_ids]
+        col = self.db["product_comment"]
+        return col.find({'productId': {'$in': product_ids}})
+
+    def get_product_comment_by_pid(self, product_id):
+        col = self.db["product_comment"]
+        return col.find({'rawProductId': product_id})
+
+    def get_product_comment_by_oid(self, order_id):
+        col = self.db["product_comment"]
+        return col.find({'orderId': order_id})
+
+    def get_product_ext_comment_all(self):
+        col = self.db["product_ext_comment"]
+        return col.find()
+
+    def get_product_ext_comment_by_uid(self, user_id):
+        product_ids = self.get_product_detail_by_uid(user_id)
+        product_ids = [product['productId'] for product in product_ids]
+        col = self.db["product_ext_comment"]
+        return col.find({'productId': {'$in': product_ids}})
+
+    def get_product_ext_comment_by_pid(self, product_id):
+        col = self.db["product_ext_comment"]
+        return col.find({'rawProductId': product_id})
+
+    def get_product_ext_comment_by_oid(self, order_id):
+        col = self.db["product_ext_comment"]
+        return col.find({'orderId': order_id})
+
+    def get_product_all_comment_all(self):
+        comments = self.get_product_comment_all()
+        ext_comments = self.get_product_ext_comment_all()
+        return comments, ext_comments
+
+    def get_product_all_comment_by_uid(self, user_id):
+        comments = self.get_product_comment_by_uid(user_id)
+        ext_comments = self.get_product_ext_comment_by_uid(user_id)
+        return comments, ext_comments
+
+    def get_product_all_comment_by_pid(self, product_id):
+        comments = self.get_product_comment_by_pid(product_id)
+        ext_comments = self.get_product_ext_comment_by_pid(product_id)
+        return comments, ext_comments
+
+    def get_host_info_all(self):
+        host_infos = self.get_product_detail_all()
+        host_infos = [host_info['hostInfo'] for host_info in host_infos]
+        # 字典去重，userId 相同保留一个
+        host_infos = [dict(t) for t in set([tuple(d.items()) for d in host_infos])]
+        # 按照 userId 排序
+        # host_infos = sorted(host_infos, key=lambda x: x['userId'])
+        return host_infos
+
+    def get_host_info_by_uid(self, user_id):
+        host_infos = self.get_product_detail_by_uid(user_id)
+        host_infos = [host_info['hostInfo'] for host_info in host_infos]
+        host_infos = [dict(t) for t in set([tuple(d.items()) for d in host_infos])]
+        # host_infos = sorted(host_infos, key=lambda x: x['userId'])
+        return host_infos
+
+    def get_host_info_by_pid(self, product_id):
+        host_infos = self.get_product_detail_by_pid(product_id)
+        host_infos = [host_info['hostInfo'] for host_info in host_infos]
+        host_infos = [dict(t) for t in set([tuple(d.items()) for d in host_infos])]
+        return host_infos
