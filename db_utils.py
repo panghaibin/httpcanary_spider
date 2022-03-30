@@ -11,6 +11,8 @@ class DbSaver:
         self.db = self.client["mtms"]
 
     def save_user_info(self, data: list):
+        if len(data) == 0:
+            return
         col = self.db["user_info"]
         dc = 0
         for user in data:
@@ -21,6 +23,8 @@ class DbSaver:
         logging.info('insert user info: %s', len(i.inserted_ids))
 
     def save_host_product(self, data: list):
+        if len(data) == 0:
+            return
         col = self.db["host_product"]
         dc = 0
         for product in data:
@@ -31,6 +35,8 @@ class DbSaver:
         logging.info('insert host product: %s', len(i.inserted_ids))
 
     def save_product_detail(self, data: list):
+        if len(data) == 0:
+            return
         col = self.db["product_detail"]
         dc = 0
         for detail in data:
@@ -41,6 +47,8 @@ class DbSaver:
         logging.info('insert product detail: %s', len(i.inserted_ids))
 
     def save_user_comment(self, data: list):
+        if len(data) == 0:
+            return
         col = self.db["user_comment"]
         dc = 0
         for comment in data:
@@ -51,6 +59,8 @@ class DbSaver:
         logging.info('insert user comment: %s', len(i.inserted_ids))
 
     def save_product_comment(self, data: list):
+        if len(data) == 0:
+            return
         col = self.db["product_comment"]
         dc = 0
         for comment in data:

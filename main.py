@@ -10,17 +10,17 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
-def GetHttpCanaryFileName():
+def get_http_canary_file_name():
     str_time = time.strftime('%Y-%m-%d_%H-%M-%S', time.localtime(time.time()))
-    FilePath = os.path.join(app.config['UPLOAD_FOLDER'], str_time + '.ZIP')
-    return FilePath
+    file_path = os.path.join(app.config['UPLOAD_FOLDER'], str_time + '.ZIP')
+    return file_path
 
 
-def unZip(ZipFile):
-    extPath = ZipFile[ZipFile.rfind("\\") + 1:][:-4]
+def unzip(zip_file):
+    ext_path = zip_file[zip_file.rfind("\\") + 1:][:-4]
     # print(extPath)
-    file = zipfile.ZipFile(ZipFile, 'r')
-    extract_path = os.path.join('.', app.config['UPLOAD_FOLDER'], extPath)
+    file = zipfile.ZipFile(zip_file, 'r')
+    extract_path = os.path.join('.', app.config['UPLOAD_FOLDER'], ext_path)
     for f in file.namelist():
         file.extract(f, extract_path)
     file.close()
@@ -36,13 +36,13 @@ def save_to_db(path):
 @app.route('/httpcanary', methods=['GET', 'POST'])
 def httpcanary():
     if request.method == 'POST':
-        print(request.headers)
-        Zip = GetHttpCanaryFileName()
-        with open(str(Zip), "wb") as f2:
+        # print(request.headers)
+        zip_name = get_http_canary_file_name()
+        with open(str(zip_name), "wb") as f2:
             f2.write(request.get_data())
-        path = unZip(Zip)
+        path = unzip(zip_name)
         print(path)
-        # save_to_db(path)
+        save_to_db(path)
 
     return 'ok'
 
