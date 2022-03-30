@@ -32,8 +32,8 @@ def save_to_db(path):
     mtms = MTMSParser(parse_dir_result)
     mtms.save_all()
     mtms_comment = MTMSComment(parse_dir_result)
-    mtms_comment.get_more_product_comment()
-    mtms_comment.save_more_product_comment()
+    mtms_comment.get_all()
+    mtms_comment.save_all()
 
 
 @app.route('/httpcanary', methods=['GET', 'POST'])

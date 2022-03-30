@@ -43,6 +43,7 @@ class MTMSParser:
             product_id = file.request.json['productId']
             data = file.response.json['data']
             data.update({'productId': int(product_id)})
+            logging.info('pid: %s', product_id)
             product_detail.append(data)
         return product_detail
 
@@ -116,6 +117,10 @@ class MTMSComment:
         self.need_more_product_comment = {}
         self.check_more_product_comment()
         self.more_product_comment_result = []
+        self.product_ext_comment = self._mtms_parser.filter_req_path(r'product/extCommentList\?')
+        self.need_more_product_ext_comment = {}
+        self.check_more_product_ext_comment()
+        self.more_product_ext_comment_result = []
 
     def check_more_product_comment(self):
         for comment in self.product_comment:
@@ -153,7 +158,65 @@ class MTMSComment:
                     # print(comment)
                 self.more_product_comment_result.extend(result)
                 sleep(1)
-            logging.info('get_more_product_comment: %s' % product_id)
+            logging.info('get_more_product_comment: id%s' % product_id)
 
     def save_more_product_comment(self):
-        self._db.save_product_comment(self.more_product_comment_result)
+        data = self.more_product_comment_result
+        if len(data) == 0:
+            return
+        self._db.save_product_comment(data)
+        logging.info('save_more_product_comment: %s' % len(data))
+        
+    def check_more_product_ext_comment(self):
+        for comment in self.product_ext_comment:
+            if comment.response.json['data']['total'] > 0:
+                host = comment.request.request.headers.get('host')
+                path_no_query = comment.request.get_no_query_path()
+                req_query = comment.request.urlparse_query
+                req_json = comment.request.json
+                product_id = int(req_json['productId'])
+                page_now = int(req_json['pageNow'])
+                page_size = int(req_json['pageSize'])
+                res_json = comment.response.json
+                tol_comment = res_json['data']['total']
+                tol_page = int(tol_comment / page_size) + 1
+                if tol_page > 1 and page_now == 1 and self.need_more_product_ext_comment.get(product_id) is None:
+                    send_list = []
+                    for page in range(2, tol_page + 1):
+                        req_query.update({'pageNow': page})
+                        url = "https://%s%s?%s" % (host, path_no_query, urlencode(req_query))
+                        headers = dict(comment.request.request.headers)
+                        body = comment.request.json
+                        send = {'url': url, 'headers': headers, 'body': body}
+                        send_list.append(send)
+                    self.need_more_product_ext_comment.update({product_id: send_list})
+        logging.info('need_more_ext_product_comment: %s' % len(self.need_more_product_ext_comment))
+
+    def get_more_product_ext_comment(self):
+        for product_id in self.need_more_product_ext_comment:
+            for send in self.need_more_product_ext_comment[product_id]:
+                url = send['url']
+                headers = send['headers']
+                body = send['body']
+                result = requests.post(url, headers=headers, data=body).json()['data']['list']
+                for comment in result:
+                    comment.update({'rawProductId': product_id})
+                    # print(comment)
+                self.more_product_ext_comment_result.extend(result)
+                sleep(1)
+            logging.info('get_more_product_ext_comment: id%s' % product_id)
+
+    def save_more_product_ext_comment(self):
+        data = self.more_product_ext_comment_result
+        if len(data) == 0:
+            return
+        self._db.save_product_ext_comment(data)
+        logging.info('save_more_product_ext_comment: %s' % len(data))
+
+    def get_all(self):
+        self.get_more_product_comment()
+        # self.get_more_product_ext_comment()
+
+    def save_all(self):
+        self.save_more_product_comment()
+        # self.save_more_product_ext_comment()

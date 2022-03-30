@@ -1,5 +1,6 @@
 # 项目文件
 temp.py
+temp.*.py
 *.hcy
 *.zip
 # Pycharm
