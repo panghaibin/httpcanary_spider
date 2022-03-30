@@ -11,6 +11,7 @@ class MTMSParser:
         self.product_detail = self.get_product_detail()
         self.user_comment = self.get_user_comment()
         self.product_comment = self.get_product_comment()
+        self.product_ext_comment = self.get_product_ext_comment()
 
     def get_user_info(self):
         files = self._parse_dir_result.filter_req_path(r'user/info\/')
@@ -65,6 +66,18 @@ class MTMSParser:
             product_comment.extend(comments)
         return product_comment
 
+    def get_product_ext_comment(self):
+        files = self._parse_dir_result.filter_req_path(r'product/extCommentList\?')
+        product_ext_comment = []
+        for file in files:
+            product_id = file.request.json['productId']
+            data = file.response.json['data']
+            comments = data['list']
+            for comment in comments:
+                comment.update({'rawProductId': int(product_id)})
+            product_ext_comment.extend(comments)
+        return product_ext_comment
+
     def save_user_info(self):
         self._db.save_user_info(self.user_info)
 
@@ -80,9 +93,13 @@ class MTMSParser:
     def save_product_comment(self):
         self._db.save_product_comment(self.product_comment)
 
+    def save_product_ext_comment(self):
+        self._db.save_product_ext_comment(self.product_ext_comment)
+
     def save_all(self):
         self.save_user_info()
         self.save_host_product()
         self.save_product_detail()
         self.save_user_comment()
         self.save_product_comment()
+        self.save_product_ext_comment()
