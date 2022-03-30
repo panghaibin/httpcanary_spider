@@ -1,4 +1,3 @@
-import os
 import subprocess
 from time import sleep
 
@@ -11,7 +10,7 @@ def click_comment():
     subprocess.check_output("adb shell input tap %s %s" % (0x000003b7, 0x00000601))
 
 
-def click_http():
+def click_httpcanary():
     subprocess.check_output("adb shell input tap %s %s" % (0x00000397, 0x000001c8))
     sleep(0.5)
     subprocess.check_output("adb shell input tap %s %s" % (0x000003f2, 0x00000455))
@@ -38,7 +37,7 @@ def main():
         elif key == "2":
             click_comment()
         elif key == "3":
-            click_http()
+            click_httpcanary()
         elif key == "4":
             click_return()
         elif key == "5":
@@ -56,7 +55,7 @@ def auto_ctrl():
         click_comment()
         sleep(5)
         if i % 1 == 0:
-            click_http()
+            click_httpcanary()
             sleep(1)
         click_return()
         sleep(0.3)
