@@ -1,5 +1,8 @@
+import requests
+from time import sleep
 from parse import *
 from db_utils import *
+from urllib.parse import urlencode
 
 
 class MTMSParser:
@@ -47,7 +50,7 @@ class MTMSParser:
         files = self._parse_dir_result.filter_req_path(r'user/comments\?')
         user_comment = []
         for file in files:
-            user_id = file.request.urlparse['userId'][0]
+            user_id = file.request.urlparse_query['userId']
             comments = file.response.json['data']['list']
             for comment in comments:
                 comment.update({'userId': int(user_id)})
@@ -58,7 +61,7 @@ class MTMSParser:
         files = self._parse_dir_result.filter_req_path(r'product/comments\?')
         product_comment = []
         for file in files:
-            product_id = file.request.urlparse['productId'][0]
+            product_id = file.request.urlparse_query['productId']
             data = file.response.json['data']
             comments = data['list']
             for comment in comments:
@@ -103,3 +106,54 @@ class MTMSParser:
         self.save_user_comment()
         self.save_product_comment()
         self.save_product_ext_comment()
+
+
+class MTMSComment:
+    def __init__(self, parse_dir_result: ParseDir):
+        self._mtms_parser = parse_dir_result
+        self._db = DbSaver()
+        self.product_comment = self._mtms_parser.filter_req_path(r'product/comments\?')
+        self.need_more_product_comment = {}
+        self.check_more_product_comment()
+        self.more_product_comment_result = []
+
+    def check_more_product_comment(self):
+        for comment in self.product_comment:
+            if comment.response.json['data']['total'] > 0:
+                host = comment.request.request.headers.get('host')
+                path_no_query = comment.request.get_no_query_path()
+                req_query = comment.request.urlparse_query
+                product_id = int(req_query['productId'])
+                page_now = int(req_query['pageNow'])
+                page_size = int(req_query['pageSize'])
+                res_json = comment.response.json
+                tol_comment = res_json['data']['total']
+                tol_page = int(tol_comment / page_size) + 1
+                if tol_page > 1 and page_now == 1 and self.need_more_product_comment.get(product_id) is None:
+                    send_list = []
+                    for page in range(2, tol_page + 1):
+                        req_query.update({'pageNow': page})
+                        url = "https://%s%s?%s" % (host, path_no_query, urlencode(req_query))
+                        headers = dict(comment.request.request.headers)
+                        body = comment.request.json
+                        send = {'url': url, 'headers': headers, 'body': body}
+                        send_list.append(send)
+                    self.need_more_product_comment.update({product_id: send_list})
+        logging.info('need_more_product_comment: %s' % len(self.need_more_product_comment))
+
+    def get_more_product_comment(self):
+        for product_id in self.need_more_product_comment:
+            for send in self.need_more_product_comment[product_id]:
+                url = send['url']
+                headers = send['headers']
+                body = send['body']
+                result = requests.post(url, headers=headers, data=body).json()['data']['list']
+                for comment in result:
+                    comment.update({'rawProductId': product_id})
+                    # print(comment)
+                self.more_product_comment_result.extend(result)
+                sleep(1)
+            logging.info('get_more_product_comment: %s' % product_id)
+
+    def save_more_product_comment(self):
+        self._db.save_product_comment(self.more_product_comment_result)

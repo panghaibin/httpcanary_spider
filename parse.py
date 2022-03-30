@@ -40,7 +40,7 @@ class ParseResponse:
             self.file_content = f.read()
         self.response = self._response_from_bytes(self.file_content)
         self.json = self.get_json()
-        self.urlparse = self.get_urlparse()
+        self.urlparse_query = self.get_urlparse_query()
 
     @staticmethod
     def _response_from_bytes(data):
@@ -58,14 +58,16 @@ class ParseResponse:
     def get_json(self):
         return json.loads(self.response.data.decode('utf-8'))
 
-    def get_urlparse(self):
-        return parse_qs(urlparse(self.response.data.decode('utf-8')).query)
+    def get_urlparse_query(self):
+        query = parse_qs(urlparse(self.response.data.decode('utf-8')).query)
+        query = {k: v[0] for k, v in query.items()}
+        return query
 
     def print_json(self):
         print(json.dumps(self.json, indent=4, ensure_ascii=False))
 
     def print_urlparse(self):
-        print(json.dumps(self.urlparse, indent=4, ensure_ascii=False))
+        print(json.dumps(self.urlparse_query, indent=4, ensure_ascii=False))
 
     def print_readable(self):
         try:
@@ -81,7 +83,7 @@ class ParseRequest:
             self.file_content = f.read()
         self.request = self._request_from_bytes(self.file_content)
         self.json = self.get_json()
-        self.urlparse = self.get_urlparse()
+        self.urlparse_query = self.get_urlparse_query()
 
     @staticmethod
     def _request_from_bytes(data):
@@ -104,8 +106,13 @@ class ParseRequest:
     def get_path(self):
         return self.request.path
 
-    def get_urlparse(self):
-        return parse_qs(urlparse(self.request.path).query)
+    def get_no_query_path(self):
+        return urlparse(self.request.path).path
+
+    def get_urlparse_query(self):
+        query = parse_qs(urlparse(self.request.path).query)
+        query = {k: v[0] for k, v in query.items()}
+        return query
 
     def get_json(self):
         raw_data = self.request.rfile.read()
@@ -116,7 +123,7 @@ class ParseRequest:
             return None
 
     def print_urlparse(self):
-        print(json.dumps(self.urlparse, indent=4, ensure_ascii=False))
+        print(json.dumps(self.urlparse_query, indent=4, ensure_ascii=False))
 
     def print_json(self):
         print(json.dumps(self.json, indent=4, ensure_ascii=False))

@@ -3,7 +3,7 @@ import time
 import zipfile
 from flask import Flask, request
 from parse import ParseDir
-from mtms import MTMSParser
+from mtms import MTMSParser, MTMSComment
 
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'upload')
 app = Flask(__name__)
@@ -31,6 +31,9 @@ def save_to_db(path):
     parse_dir_result = ParseDir(path)
     mtms = MTMSParser(parse_dir_result)
     mtms.save_all()
+    mtms_comment = MTMSComment(parse_dir_result)
+    mtms_comment.get_more_product_comment()
+    mtms_comment.save_more_product_comment()
 
 
 @app.route('/httpcanary', methods=['GET', 'POST'])
