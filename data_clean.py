@@ -106,10 +106,12 @@ class DataClean:
         same = {}
         for i in range(len(comments)):
             for j in range(i + 1, len(comments)):
+                i_name = re.sub(r'\*', '', comments[i].get('userNickName'))
+                j_name = re.sub(r'\*', '', comments[j].get('userNickName'))
                 if comments[i].get('userAvatarUrl') == comments[j].get('userAvatarUrl') \
-                        and comments[i].get('userNickName') == comments[j].get('userNickName') \
+                        and i_name == j_name \
                         and '匿名用户' not in comments[i].get('userNickName'):
-                    key = comments[i].get('userAvatarUrl') + comments[i].get('userNickName')
+                    key = comments[i].get('userAvatarUrl') + i_name
                     hash_key = hashlib.md5(key.encode('utf-8')).hexdigest()
                     if hash_key not in same:
                         same.update({hash_key: [comments[i], comments[j]]})
