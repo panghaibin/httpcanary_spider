@@ -43,7 +43,9 @@ class MTMSParser:
             product_id = file.request.json['productId']
             data = file.response.json['data']
             data.update({'productId': int(product_id)})
-            logging.info('pid: %s', product_id)
+            # logging.info('pid: %s', product_id)
+            # add = data['product']['productAllInfoResult']['addressInfo']
+            # logging.info("lat: %s, lon: %s", add['latitude'], add['longitude'])
             product_detail.append(data)
         return product_detail
 

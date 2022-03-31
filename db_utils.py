@@ -1,5 +1,6 @@
 import pymongo
 import logging
+import prcoords
 
 MONGO_PATH = "mongodb://localhost:27017"
 logging.basicConfig(level=logging.INFO)
@@ -208,3 +209,17 @@ class DatabaseUtils:
         host_infos = [host_info['hostInfo'] for host_info in host_infos]
         host_infos = [dict(t) for t in set([tuple(d.items()) for d in host_infos])]
         return host_infos
+
+    def transform_coord_product_detail(self):
+        col = self.db["product_detail"]
+        product_details = col.find()
+        for product in product_details:
+            add_info = product['product']['productAllInfoResult']['addressInfo']
+            if not (add_info.get('latitudeWGS') and add_info.get('longitudeWGS')):
+                lat = add_info['latitude'] / 1000000
+                lon = add_info['longitude'] / 1000000
+                wgs = prcoords.gcj_wgs((lat, lon))
+                add_info.update({'latitudeWGS': wgs.lat})
+                add_info.update({'longitudeWGS': wgs.lon})
+                col.update_one({'productId': product['productId']},
+                               {'$set': {'product.productAllInfoResult.addressInfo': add_info}})
