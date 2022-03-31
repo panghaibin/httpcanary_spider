@@ -126,51 +126,51 @@ class DatabaseUtils:
 
     def get_product_detail_all(self):
         col = self.db["product_detail"]
-        return col.find()
+        return col.find({}, {'_id': 0})
 
     def get_product_detail_by_pid(self, product_id):
         col = self.db["product_detail"]
-        return col.find_one({'rawProductId': product_id})
+        return col.find_one({'productId': product_id}, {'_id': 0})
 
     def get_product_detail_by_uid(self, user_id):
         col = self.db["product_detail"]
-        return col.find({'hostInfo': {'userId': user_id}})
+        return col.find({'hostInfo': {'userId': user_id}}, {'_id': 0})
 
     def get_product_comment_all(self):
         col = self.db["product_comment"]
-        return col.find()
+        return col.find({}, {'_id': 0})
 
     def get_product_comment_by_uid(self, user_id):
         product_ids = self.get_product_detail_by_uid(user_id)
         product_ids = [product['productId'] for product in product_ids]
         col = self.db["product_comment"]
-        return col.find({'productId': {'$in': product_ids}})
+        return col.find({'productId': {'$in': product_ids}}, {'_id': 0})
 
     def get_product_comment_by_pid(self, product_id):
         col = self.db["product_comment"]
-        return col.find({'rawProductId': product_id})
+        return col.find({'rawProductId': product_id}, {'_id': 0})
 
     def get_product_comment_by_oid(self, order_id):
         col = self.db["product_comment"]
-        return col.find({'orderId': order_id})
+        return col.find({'orderId': order_id}, {'_id': 0})
 
     def get_product_ext_comment_all(self):
         col = self.db["product_ext_comment"]
-        return col.find()
+        return col.find({}, {'_id': 0})
 
     def get_product_ext_comment_by_uid(self, user_id):
         product_ids = self.get_product_detail_by_uid(user_id)
         product_ids = [product['productId'] for product in product_ids]
         col = self.db["product_ext_comment"]
-        return col.find({'productId': {'$in': product_ids}})
+        return col.find({'productId': {'$in': product_ids}}, {'_id': 0})
 
     def get_product_ext_comment_by_pid(self, product_id):
         col = self.db["product_ext_comment"]
-        return col.find({'rawProductId': product_id})
+        return col.find({'rawProductId': product_id}, {'_id': 0})
 
     def get_product_ext_comment_by_oid(self, order_id):
         col = self.db["product_ext_comment"]
-        return col.find({'orderId': order_id})
+        return col.find({'orderId': order_id}, {'_id': 0})
 
     def get_product_all_comment_all(self):
         comments = self.get_product_comment_all()
@@ -189,7 +189,7 @@ class DatabaseUtils:
 
     def get_host_info_all(self):
         host_infos = self.get_product_detail_all()
-        host_infos = [host_info['hostInfo'] for host_info in host_infos]
+        host_infos = [host_info['hostInfo'] for host_info in host_infos if host_infos is not None]
         # 字典去重，userId 相同保留一个
         host_infos = [dict(t) for t in set([tuple(d.items()) for d in host_infos])]
         # 按照 userId 排序
@@ -197,14 +197,15 @@ class DatabaseUtils:
         return host_infos
 
     def get_host_info_by_uid(self, user_id):
-        host_infos = self.get_product_detail_by_uid(user_id)
-        host_infos = [host_info['hostInfo'] for host_info in host_infos]
-        host_infos = [dict(t) for t in set([tuple(d.items()) for d in host_infos])]
-        # host_infos = sorted(host_infos, key=lambda x: x['userId'])
-        return host_infos
+        product_detail = self.get_product_detail_by_uid(user_id)
+        if product_detail is None:
+            return None
+        if product_detail[0].get('hostInfo') is not None:
+            return product_detail[0]['hostInfo']
 
     def get_host_info_by_pid(self, product_id):
-        host_infos = self.get_product_detail_by_pid(product_id)
-        host_infos = [host_info['hostInfo'] for host_info in host_infos]
-        host_infos = [dict(t) for t in set([tuple(d.items()) for d in host_infos])]
-        return host_infos
+        product_detail = self.get_product_detail_by_pid(product_id)
+        if product_detail is None:
+            return None
+        if product_detail.get('hostInfo') is not None:
+            return product_detail['hostInfo']
