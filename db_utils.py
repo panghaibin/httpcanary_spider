@@ -134,7 +134,8 @@ class DatabaseUtils:
 
     def get_product_detail_by_uid(self, user_id):
         col = self.db["product_detail"]
-        return col.find({'hostInfo': {'userId': user_id}}, {'_id': 0})
+        product_details = col.find({'hostInfo.userId': user_id}, {'_id': 0})
+        return product_details
 
     def get_product_comment_all(self):
         col = self.db["product_comment"]
@@ -144,7 +145,8 @@ class DatabaseUtils:
         product_ids = self.get_product_detail_by_uid(user_id)
         product_ids = [product['productId'] for product in product_ids]
         col = self.db["product_comment"]
-        return col.find({'productId': {'$in': product_ids}}, {'_id': 0})
+        product_comments = col.find({'rawProductId': {'$in': product_ids}}, {'_id': 0})
+        return product_comments
 
     def get_product_comment_by_pid(self, product_id):
         col = self.db["product_comment"]
@@ -154,52 +156,67 @@ class DatabaseUtils:
         col = self.db["product_comment"]
         return col.find({'orderId': order_id}, {'_id': 0})
 
-    def get_product_ext_comment_all(self):
-        col = self.db["product_ext_comment"]
-        return col.find({}, {'_id': 0})
+    def get_product_comment_by_score(self, value, symbol):
+        col = self.db["product_comment"]
+        symbol_map = {'<': '$lt', '>': '$gt', '=': '$eq', '<=': '$lte', '>=': '$gte'}
+        return col.find({'totalScore': {symbol_map[symbol]: value}}, {'_id': 0})
 
-    def get_product_ext_comment_by_uid(self, user_id):
-        product_ids = self.get_product_detail_by_uid(user_id)
-        product_ids = [product['productId'] for product in product_ids]
-        col = self.db["product_ext_comment"]
-        return col.find({'productId': {'$in': product_ids}}, {'_id': 0})
-
-    def get_product_ext_comment_by_pid(self, product_id):
-        col = self.db["product_ext_comment"]
-        return col.find({'rawProductId': product_id}, {'_id': 0})
-
-    def get_product_ext_comment_by_oid(self, order_id):
-        col = self.db["product_ext_comment"]
-        return col.find({'orderId': order_id}, {'_id': 0})
-
-    def get_product_all_comment_all(self):
-        comments = self.get_product_comment_all()
-        ext_comments = self.get_product_ext_comment_all()
-        return comments, ext_comments
-
-    def get_product_all_comment_by_uid(self, user_id):
-        comments = self.get_product_comment_by_uid(user_id)
-        ext_comments = self.get_product_ext_comment_by_uid(user_id)
-        return comments, ext_comments
-
-    def get_product_all_comment_by_pid(self, product_id):
-        comments = self.get_product_comment_by_pid(product_id)
-        ext_comments = self.get_product_ext_comment_by_pid(product_id)
-        return comments, ext_comments
+    # def get_product_ext_comment_all(self):
+    #     col = self.db["product_ext_comment"]
+    #     return col.find({}, {'_id': 0})
+    #
+    # def get_product_ext_comment_by_uid(self, user_id):
+    #     product_ids = self.get_product_detail_by_uid(user_id)
+    #     product_ids = [product['productId'] for product in product_ids]
+    #     col = self.db["product_ext_comment"]
+    #     return col.find({'productId': {'$in': product_ids}}, {'_id': 0})
+    #
+    # def get_product_ext_comment_by_pid(self, product_id):
+    #     col = self.db["product_ext_comment"]
+    #     return col.find({'rawProductId': product_id}, {'_id': 0})
+    #
+    # def get_product_ext_comment_by_oid(self, order_id):
+    #     col = self.db["product_ext_comment"]
+    #     return col.find({'orderId': order_id}, {'_id': 0})
+    #
+    # def get_product_all_comment_all(self):
+    #     comments = self.get_product_comment_all()
+    #     ext_comments = self.get_product_ext_comment_all()
+    #     return comments, ext_comments
+    #
+    # def get_product_all_comment_by_uid(self, user_id):
+    #     comments = self.get_product_comment_by_uid(user_id)
+    #     ext_comments = self.get_product_ext_comment_by_uid(user_id)
+    #     return comments, ext_comments
+    #
+    # def get_product_all_comment_by_pid(self, product_id):
+    #     comments = self.get_product_comment_by_pid(product_id)
+    #     ext_comments = self.get_product_ext_comment_by_pid(product_id)
+    #     return comments, ext_comments
 
     def get_host_info_all(self):
-        host_infos = self.get_product_detail_all()
-        host_infos = [host_info['hostInfo'] for host_info in host_infos if host_infos is not None]
-        # 字典去重，userId 相同保留一个
-        host_infos = [dict(t) for t in set([tuple(d.items()) for d in host_infos])]
+        raw_host_infos = self.get_product_detail_all()
+        raw_host_infos = [host_info['hostInfo'] for host_info in raw_host_infos if raw_host_infos is not None]
+        # 字典去重
+        raw_host_infos = [dict(t) for t in set([tuple(d.items()) for d in raw_host_infos])]
         # 按照 userId 排序
-        # host_infos = sorted(host_infos, key=lambda x: x['userId'])
+        # raw_host_infos = sorted(raw_host_infos, key=lambda x: x['userId'])
+        host_infos = []
+        for raw_host_info in raw_host_infos:
+            for i in range(len(host_infos)):
+                if host_infos[i]['userId'] == raw_host_info['userId']:
+                    host_infos.pop(i)
+                    host_infos.insert(i, raw_host_info)
+                    break
+            else:
+                host_infos.append(raw_host_info)
         return host_infos
 
     def get_host_info_by_uid(self, user_id):
         product_detail = self.get_product_detail_by_uid(user_id)
         if product_detail is None:
             return None
+        product_detail = list(product_detail)
         if product_detail[0].get('hostInfo') is not None:
             return product_detail[0]['hostInfo']
 
@@ -209,3 +226,28 @@ class DatabaseUtils:
             return None
         if product_detail.get('hostInfo') is not None:
             return product_detail['hostInfo']
+
+    def save_product_comment_sentiment(self, sentiment):
+        col = self.db["product_comment_sentiment3"]
+        comment_id = sentiment['commentId']
+        page = sentiment['page']
+        col.delete_many({'commentId': comment_id, 'page': page})
+        col.insert_one(sentiment)
+
+    def get_product_comment_sentiment_by_id(self, comment_id, page):
+        col = self.db["product_comment_sentiment3"]
+        return col.find_one({'commentId': comment_id, 'page': page}, {'_id': 0})
+
+    def get_product_comment_sentiment_by_sentiment(self, type_, value, symbol):
+        col = self.db["product_comment_sentiment3"]
+        type_map = {'neg': 'Negative', 'neu': 'Neutral', 'pos': 'Positive'}
+        symbol_map = {'<': '$lt', '>': '$gt', '=': '$eq', '<=': '$lte', '>=': '$gte'}
+        return col.find({type_map[type_]: {symbol_map[symbol]: value}}, {'_id': 0})
+
+    def check_product_comment_sentiment(self, comment_id):
+        col = self.db["product_comment_sentiment3"]
+        sentiment = col.find_one({'commentId': comment_id})
+        if sentiment is None:
+            return False
+        else:
+            return True

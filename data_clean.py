@@ -1,6 +1,7 @@
+import csv
 import hashlib
 import os
-
+import time
 import prcoords
 import logging
 import pymongo
@@ -21,6 +22,7 @@ class DataClean:
         self.returned_customer_comment = None
         self.same_product_customer_comment = None
         self.same_host_customer_comment = None
+        self.returned_customer_of_host = None
 
     def transform_coord_product_detail(self):
         col = self.db["product_detail"]
@@ -55,7 +57,12 @@ class DataClean:
             tags, text = self.parse_comment2tag_text(body)
             ext_comment.update({'body': text})
             ext_comment.update({'commentTextList': tags})
-            ext_comment.update({'commentDate': ext_comment['extCommentDate']})
+            # 格式： 2021年06月
+            comment_date = ext_comment['extCommentDate']
+            ext_comment.update({'commentDate': comment_date})
+            # 转换成时间戳
+            gmt_time = time.strptime(comment_date, '%Y年%m月')
+            ext_comment.update({'gmtModify': int(time.mktime(gmt_time) * 1000)})
             ext_comment.pop('extCommentDate')
             ext_comment.pop('totalScoreDesc')
             d = col.delete_many({'commentId': ext_comment['commentId'], 'source': 2})
@@ -167,3 +174,68 @@ class DataClean:
                                 same2.get(i).append(comments[k])
         self.same_host_customer_comment = same2
         return same2
+
+    def filter_returned_customer_comment_of_host(self):
+        hosts = self.db_utils.get_host_info_all()
+        same0 = {}
+        for host in hosts:
+            same = {}
+            host_id = host['userId']
+            comments = list(self.db_utils.get_product_comment_by_uid(host_id))
+            for i in range(len(comments)):
+                for j in range(i + 1, len(comments)):
+                    i_name = re.sub(r'\*', '', comments[i].get('userNickName'))
+                    j_name = re.sub(r'\*', '', comments[j].get('userNickName'))
+                    if comments[i].get('userAvatarUrl') == comments[j].get('userAvatarUrl') \
+                            and i_name == j_name \
+                            and '匿名用户' not in comments[i].get('userNickName'):
+                        key = comments[i].get('userAvatarUrl') + i_name
+                        hash_key = hashlib.md5(key.encode('utf-8')).hexdigest()
+                        if hash_key not in same:
+                            same.update({hash_key: [comments[i], comments[j]]})
+                        else:
+                            for exit_comment in same.get(hash_key):
+                                if exit_comment.get('commentId') == comments[j].get('commentId'):
+                                    break
+                            else:
+                                same.get(hash_key).append(comments[j])
+            if len(same) > 0:
+                same0.update({host_id: same})
+        self.returned_customer_of_host = same0
+        return same0
+
+    def save_returned_customer_comment_of_host2csv(self, file_name=None):
+        if self.returned_customer_of_host is None:
+            self.filter_returned_customer_comment_of_host()
+        returned_customer_comment_of_host = self.returned_customer_of_host
+        file_name = file_name if file_name is not None else 'returned_customer_comment_of_host.csv'
+        file_name = file_name + '.csv' if file_name[-4:] != '.csv' else file_name
+        with open(file_name, 'w', encoding='utf-8', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['userId', 'nickName', 'goodCommentRate', 'goodCommentRateAbove', 'replySessionRate',
+                             'avgCommentScore', 'commentCount', 'productCount', 'returnedCustomerCount',
+                             'returnedCommentCount', 'earliestCommentDate'])
+            for host_id in returned_customer_comment_of_host:
+                host_id = host_id
+                host = self.db_utils.get_host_info_by_uid(int(host_id))
+                nick_name = host['nickName']
+                good_comment_rate = host['goodCommentRate']
+                good_comment_rate_above = host['goodCommentRateAbove']
+                reply_session_rate = host['replySessionRate']
+                avg_comment_score = host['avgCommentScore']
+                comment_count = host['commentCount']
+                product_count = host['productCount']
+                returned_customer_count = 0
+                returned_comment_count = 0
+                comment_date_list = []
+                for user in returned_customer_comment_of_host[host_id]:
+                    returned_customer_count += 1
+                    for comment in returned_customer_comment_of_host[host_id][user]:
+                        returned_comment_count += 1
+                        comment_date_list.append(comment['gmtModify'])
+                earliest_comment_date = min(comment_date_list)
+                writer.writerow([host_id, nick_name, good_comment_rate, good_comment_rate_above, reply_session_rate,
+                                 avg_comment_score, comment_count, product_count, returned_customer_count,
+                                 returned_comment_count, earliest_comment_date])
+        logging.info('save returned customer comment of host to csv file: %s, file size: %s',
+                     file_name, os.path.getsize(file_name))
