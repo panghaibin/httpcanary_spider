@@ -133,6 +133,7 @@ class DatabaseUtils:
         return col.find_one({'productId': product_id}, {'_id': 0})
 
     def get_product_detail_by_uid(self, user_id):
+        user_id = int(user_id)
         col = self.db["product_detail"]
         product_details = col.find({'hostInfo.userId': user_id}, {'_id': 0})
         return product_details
@@ -142,6 +143,7 @@ class DatabaseUtils:
         return col.find({}, {'_id': 0})
 
     def get_product_comment_by_uid(self, user_id):
+        user_id = int(user_id)
         product_ids = self.get_product_detail_by_uid(user_id)
         product_ids = [product['productId'] for product in product_ids]
         col = self.db["product_comment"]
@@ -213,6 +215,7 @@ class DatabaseUtils:
         return host_infos
 
     def get_host_info_by_uid(self, user_id):
+        user_id = int(user_id)
         product_detail = self.get_product_detail_by_uid(user_id)
         if product_detail is None:
             return None
@@ -238,6 +241,29 @@ class DatabaseUtils:
         col = self.db["product_comment_sentiment3"]
         return col.find_one({'commentId': comment_id, 'page': page}, {'_id': 0})
 
+    def get_product_comment_avg_sentiment_by_id(self, comment_id):
+        col = self.db["product_comment_sentiment3"]
+        sentiments = col.find({'commentId': comment_id}, {'_id': 0})
+        sentiments = list(sentiments)
+        neg = 0
+        pos = 0
+        tol = 0
+        body = ''
+        for sentiment in sentiments:
+            neg = neg + sentiment['Negative']
+            pos = pos + sentiment['Positive']
+            tol += 1
+            body += sentiment['body']
+        if tol == 0:
+            return None
+        avg_sentiment = {
+            'commentId': comment_id,
+            'Negative': neg / tol,
+            'Positive': pos / tol,
+            'body': body
+        }
+        return avg_sentiment
+
     def get_product_comment_sentiment_by_sentiment(self, type_, value, symbol):
         col = self.db["product_comment_sentiment3"]
         type_map = {'neg': 'Negative', 'neu': 'Neutral', 'pos': 'Positive'}
@@ -251,3 +277,21 @@ class DatabaseUtils:
             return False
         else:
             return True
+
+    def save_split_product_comment(self, data):
+        col = self.db["split_product_comment"]
+        for comment in data:
+            comment_id = comment['commentId']
+            col.delete_many({'commentId': comment_id})
+        for comment in data:
+            for body in comment['body']:
+                col.insert_one({'commentId': comment['commentId'], 'body': body})
+
+    def get_split_product_comment_all(self):
+        col = self.db["split_product_comment"]
+        return list(col.find({}, {'_id': 0}))
+
+    def get_split_product_comment_by_cid(self, comment_id):
+        col = self.db["split_product_comment"]
+        return list(col.find({'commentId': comment_id}, {'_id': 0}))
+

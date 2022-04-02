@@ -22,7 +22,10 @@ class DataClean:
         self.returned_customer_comment = None
         self.same_product_customer_comment = None
         self.same_host_customer_comment = None
-        self.returned_customer_of_host = None
+        self.returned_customer_comment_of_host = None
+        self.max_host_returned_comment = None
+        self.max_host_not_returned_comment = None
+        self.split_product_comment = None
 
     def transform_coord_product_detail(self):
         col = self.db["product_detail"]
@@ -201,13 +204,13 @@ class DataClean:
                                 same.get(hash_key).append(comments[j])
             if len(same) > 0:
                 same0.update({host_id: same})
-        self.returned_customer_of_host = same0
+        self.returned_customer_comment_of_host = same0
         return same0
 
     def save_returned_customer_comment_of_host2csv(self, file_name=None):
-        if self.returned_customer_of_host is None:
+        if self.returned_customer_comment_of_host is None:
             self.filter_returned_customer_comment_of_host()
-        returned_customer_comment_of_host = self.returned_customer_of_host
+        returned_customer_comment_of_host = self.returned_customer_comment_of_host
         file_name = file_name if file_name is not None else 'returned_customer_comment_of_host.csv'
         file_name = file_name + '.csv' if file_name[-4:] != '.csv' else file_name
         with open(file_name, 'w', encoding='utf-8', newline='') as f:
@@ -239,3 +242,100 @@ class DataClean:
                                  returned_comment_count, earliest_comment_date])
         logging.info('save returned customer comment of host to csv file: %s, file size: %s',
                      file_name, os.path.getsize(file_name))
+
+    def save_max_host_comment2csv(self, is_returned, host_id):
+        if self.max_host_returned_comment is None:
+            self.filter_max_host_returned_or_not_comments()
+        comments = self.max_host_returned_comment if is_returned else self.max_host_not_returned_comment
+        file_name = 'host_%s_returned.csv' % host_id if is_returned else 'host_%s_not_returned.csv' % host_id
+        with open(file_name, 'w', encoding='utf-8', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['commentId', 'userNickName', 'commentDate', 'body', 'totalScore',
+                             'negativeScore', 'positiveScore', 'rawProductId', 'sentimentBody'])
+            for returned_comment in comments:
+                comment_id = returned_comment['commentId']
+                user_nick_name = returned_comment['userNickName']
+                comment_date = returned_comment['gmtModify']
+                body = returned_comment['body']
+                total_score = returned_comment['totalScore']
+                raw_product_id = returned_comment['rawProductId']
+                sentiment = self.db_utils.get_product_comment_avg_sentiment_by_id(comment_id)
+                negative_score = sentiment['Negative']
+                positive_score = sentiment['Positive']
+                sentiment_body = sentiment['body']
+                writer.writerow([comment_id, user_nick_name, comment_date, body, total_score,
+                                 negative_score, positive_score, raw_product_id, sentiment_body])
+
+    def filter_max_host_returned_or_not_comments(self):
+        if self.returned_customer_comment_of_host is None:
+            self.filter_returned_customer_comment_of_host()
+        returned_customer_comment_of_host = self.returned_customer_comment_of_host
+        host_user_count = {}
+        for host_id in returned_customer_comment_of_host:
+            user_count = len(returned_customer_comment_of_host[host_id])
+            host_user_count[host_id] = user_count
+        # find the max user count of host
+        max_user_count = 0
+        max_host_id = ''
+        for host_id in host_user_count:
+            if host_user_count[host_id] > max_user_count:
+                max_user_count = host_user_count[host_id]
+                max_host_id = host_id
+        # max_host = self.db_utils.get_host_info_by_uid(max_host_id)
+        # host_products = list(self.db_utils.get_product_detail_by_uid(max_host_id))
+        host_comments = list(self.db_utils.get_product_comment_by_uid(max_host_id))
+        host_returned_comments = []
+        for user_hash in returned_customer_comment_of_host[max_host_id]:
+            for comment in returned_customer_comment_of_host[max_host_id][user_hash]:
+                host_returned_comments.append(comment)
+        host_not_returned_comments = []
+        for comment in host_comments:
+            comment_id = comment['commentId']
+            if comment_id not in [i['commentId'] for i in host_returned_comments]:
+                host_not_returned_comments.append(comment)
+
+        self.max_host_returned_comment = host_returned_comments
+        self.max_host_not_returned_comment = host_not_returned_comments
+        return host_returned_comments, host_not_returned_comments
+
+    def filter_split_product_comment(self):
+        products_comments = self.db_utils.get_product_comment_all()
+        split_product_comments = []
+        split_word = list(',.!?:;()"\'，。！？：；（）“”‘’\n\r\t ')
+        for comment in products_comments:
+            comment_id = comment['commentId']
+            body = comment.get('body', '')
+            if body == '':
+                split_body = comment['commentTextList']
+                split_product_comments.append({'commentId': comment_id, 'body': split_body})
+                continue
+
+            for word in split_word:
+                body = body.replace(word, '@#@')
+            split_body = body.split('@#@')
+
+            split_body = [x for x in split_body if x != '']
+            split_product_comments.append({'commentId': comment_id, 'body': split_body})
+        self.split_product_comment = split_product_comments
+        return split_product_comments
+
+    def save_split_product_comment2json(self):
+        if self.split_product_comment is None:
+            self.filter_split_product_comment()
+        split_product_comments = self.split_product_comment
+        with open('split_product_comment.json', 'w', encoding='utf-8') as f:
+            json.dump(split_product_comments, f, ensure_ascii=False)
+        logging.info('save split_product_comment.json, size: %s', os.path.getsize('split_product_comment.json'))
+
+    def save_split_product_comment2csv(self):
+        if self.split_product_comment is None:
+            self.filter_split_product_comment()
+        split_product_comments = self.split_product_comment
+        with open('split_product_comment.csv', 'w', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerow(['commentId', 'body'])
+            for comment in split_product_comments:
+                comment_id = comment['commentId']
+                body = comment['body']
+                writer.writerow([comment_id, body])
+        logging.info('save split_product_comment.csv, size: %s', os.path.getsize('split_product_comment.csv'))
