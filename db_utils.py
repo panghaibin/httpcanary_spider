@@ -156,12 +156,20 @@ class DatabaseUtils:
 
     def get_product_comment_by_oid(self, order_id):
         col = self.db["product_comment"]
-        return col.find({'orderId': order_id}, {'_id': 0})
+        return dict(col.find_one({'orderId': order_id}, {'_id': 0}))
+
+    def get_product_comment_by_cid(self, comment_id):
+        col = self.db["product_comment"]
+        return dict(col.find_one({'commentId': comment_id}, {'_id': 0}))
 
     def get_product_comment_by_score(self, value, symbol):
         col = self.db["product_comment"]
         symbol_map = {'<': '$lt', '>': '$gt', '=': '$eq', '<=': '$lte', '>=': '$gte'}
         return col.find({'totalScore': {symbol_map[symbol]: value}}, {'_id': 0})
+
+    def get_product_comment_by_keyword(self, keyword):
+        col = self.db["product_comment"]
+        return col.find({'body': {'$regex': keyword}}, {'_id': 0})
 
     # def get_product_ext_comment_all(self):
     #     col = self.db["product_ext_comment"]
@@ -280,12 +288,14 @@ class DatabaseUtils:
 
     def save_split_product_comment(self, data):
         col = self.db["split_product_comment"]
-        for comment in data:
-            comment_id = comment['commentId']
-            col.delete_many({'commentId': comment_id})
+        comment_ids = [comment['commentId'] for comment in data]
+        comment_ids = list(set(comment_ids))
+        col.delete_many({'commentId': {'$in': comment_ids}})
+        to_save = []
         for comment in data:
             for body in comment['body']:
-                col.insert_one({'commentId': comment['commentId'], 'body': body})
+                to_save.append({'commentId': comment['commentId'], 'body': body})
+        col.insert_many(to_save)
 
     def get_split_product_comment_all(self):
         col = self.db["split_product_comment"]
@@ -293,5 +303,20 @@ class DatabaseUtils:
 
     def get_split_product_comment_by_cid(self, comment_id):
         col = self.db["split_product_comment"]
-        return list(col.find({'commentId': comment_id}, {'_id': 0}))
+        result = col.find_one({'commentId': comment_id}, {'_id': 0})
+        return result
 
+    def get_split_product_comment_by_keyword(self, keyword):
+        col = self.db["split_product_comment"]
+        result = list(col.find({'body': {'$regex': keyword}}, {'_id': 0}))
+        return result
+
+    def get_split_product_comment_by_multi_keywords(self, keywords: list):
+        col = self.db["split_product_comment"]
+        result = []
+        for keyword in keywords:
+            result += list(col.find({'body': {'$regex': keyword}}, {'_id': 0}))
+        # remove duplicate dict
+        # raw_host_infos = [dict(t) for t in set([tuple(d.items()) for d in raw_host_infos])]
+        result = [dict(t) for t in set([tuple(d.items()) for d in result])]
+        return result

@@ -301,7 +301,7 @@ class DataClean:
     def filter_split_product_comment(self):
         products_comments = self.db_utils.get_product_comment_all()
         split_product_comments = []
-        split_word = list(',.!?:;()"\'，。！？：；（）“”‘’\n\r\t ')
+        split_word = list(',.!?:;()"\'～、，。！？：；（）~…“”‘’\n\r\t ')
         for comment in products_comments:
             comment_id = comment['commentId']
             body = comment.get('body', '')
