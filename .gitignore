@@ -1,6 +1,7 @@
 # 项目文件
 temp.py
 temp.*.py
+*.csv
 *.hcy
 *.zip
 *.json
