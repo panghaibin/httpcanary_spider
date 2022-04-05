@@ -1,4 +1,5 @@
 from data_clean import *
+from pandas.core.frame import DataFrame as df
 import json
 import time
 import csv
@@ -91,3 +92,23 @@ with open('%s.csv' % user_hash, 'w', encoding='utf-8', newline='') as f:
         # print('host_reply: ', host_reply)
         # print('comment_time: ', comment_time, 'product_id: ', product_id, 'host_id: ', host_id)
         # print('-' * 20)
+
+# %% 获取评论评分
+comment_scores = []
+for user_hash in returned_customer_comment:
+    comments = returned_customer_comment[user_hash]
+    for comment in comments:
+        comment_scores.append(comment['totalScore'])
+
+result = df(comment_scores).describe()
+print(result)
+
+# %% 获取所有评论均分
+tol_comments = list(db.get_product_comment_all())
+comment_scores = []
+for comment in tol_comments:
+    comment_scores.append(comment['totalScore'])
+
+result = df(comment_scores).describe()
+print(result)
+

@@ -5,6 +5,8 @@ temp.*.py
 *.hcy
 *.zip
 *.json
+upload/
+output/
 # Pycharm
 .idea/
 # Byte-compiled / optimized / DLL files
