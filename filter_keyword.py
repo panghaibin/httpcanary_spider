@@ -1,4 +1,3 @@
-from db_utils import *
 from data_clean import *
 import csv
 
