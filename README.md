@@ -5,4 +5,7 @@
 
 该方法具有一定的通用性，但这不是一个开箱即用的项目，目前只实现了某黄色（指APP图标的颜色）民宿软件的爬虫
 
+流程图如下：
+[![](https://github.com/panghaibin/panghaibin/raw/gh-pages/img/httpcanary.jpg)](https://github.com/panghaibin/panghaibin/raw/gh-pages/img/httpcanary.jpg)
+
 详细介绍待补充
