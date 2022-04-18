@@ -33,8 +33,8 @@ class DataClean:
         for product in product_details:
             add_info = product['product']['productAllInfoResult']['addressInfo']
             if not (add_info.get('latitudeWGS') and add_info.get('longitudeWGS')):
-                lat = add_info['latitude'] / 1000000
-                lon = add_info['longitude'] / 1000000
+                lat = add_info['latitude'] / 1000000  # 30
+                lon = add_info['longitude'] / 1000000  # 120
                 wgs = prcoords.gcj_wgs((lat, lon))
                 add_info.update({'latitudeWGS': wgs.lat})
                 add_info.update({'longitudeWGS': wgs.lon})

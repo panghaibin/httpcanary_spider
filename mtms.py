@@ -53,7 +53,7 @@ class MTMSParser:
         files = self._parse_dir_result.filter_req_path(r'user/comments\?')
         user_comment = []
         for file in files:
-            user_id = file.request.urlparse_query['userId']
+            user_id = file.request.path_urlparse_query['userId']
             comments = file.response.json['data']['list']
             for comment in comments:
                 comment.update({'userId': int(user_id)})
@@ -64,7 +64,7 @@ class MTMSParser:
         files = self._parse_dir_result.filter_req_path(r'product/comments\?')
         product_comment = []
         for file in files:
-            product_id = file.request.urlparse_query['productId']
+            product_id = file.request.path_urlparse_query['productId']
             data = file.response.json['data']
             comments = data['list']
             for comment in comments:
@@ -129,7 +129,7 @@ class MTMSComment:
             if comment.response.json['data']['total'] > 0:
                 host = comment.request.request.headers.get('host')
                 path_no_query = comment.request.get_no_query_path()
-                req_query = comment.request.urlparse_query
+                req_query = comment.request.path_urlparse_query
                 product_id = int(req_query['productId'])
                 page_now = int(req_query['pageNow'])
                 page_size = int(req_query['pageSize'])
@@ -174,7 +174,7 @@ class MTMSComment:
             if comment.response.json['data']['total'] > 0:
                 host = comment.request.request.headers.get('host')
                 path_no_query = comment.request.get_no_query_path()
-                req_query = comment.request.urlparse_query
+                req_query = comment.request.path_urlparse_query
                 req_json = comment.request.json
                 product_id = int(req_json['productId'])
                 page_now = int(req_json['pageNow'])
