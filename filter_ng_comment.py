@@ -11,7 +11,7 @@ def remove_all_spaces(s):
 
 db = DatabaseUtils()
 
-# %% 获取负面评分>=0.6
+# %% 获取负面感情得分>=0.6
 neg_comments = db.get_product_comment_sentiment_by_sentiment('neg', 0.6, '>=')
 neg_comments = list(neg_comments)
 
