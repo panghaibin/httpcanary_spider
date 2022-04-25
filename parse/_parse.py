@@ -93,7 +93,7 @@ class ParseRequest:
         self.request = self._request_from_bytes(self.file_content)
 
         self.data = self.request.rfile.read()
-        self.content_type = self.request.headers['content-type']
+        self.content_type = self.get_content_type()
         self.json = self.get_json()
         self.data_urlparse_query = self.get_data_urlparse_query()
         self.path = self.get_path()
@@ -109,20 +109,29 @@ class ParseRequest:
             return False
         return True
 
+    def get_content_type(self):
+        content_type = self.request.headers.get('Content-Type')
+        return content_type
+
     def get_file_content(self):
         with open(self.file_path, 'rb') as f:
             file_content = f.read()
         _f = file_content.split(b'\r\n', 1)[0]
         if _f.endswith(b'h2'):
-            file_content = file_content[:-2] + b'HTTP/1.1'
+            _f = _f[:-2] + b'HTTP/1.1'
+            file_content = _f + b'\r\n' + file_content[len(_f):]
         self.file_content = file_content
         return self.file_content
 
     def get_host(self):
-        return self.request.headers['host']
+        host = self.request.headers['host']
+        host = '' if host is None else host
+        return host
 
     def get_path(self):
-        return self.request.headers['path']
+        path = self.request.path
+        path = '' if path is None else path
+        return path
 
     def get_no_query_path(self):
         return urlparse(self.path).path
