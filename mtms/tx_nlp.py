@@ -1,7 +1,7 @@
 import json
 import re
 import logging
-from db_utils import DatabaseUtils
+from mtms.db_utils import DatabaseUtils
 from tencentcloud.common import credential
 from tencentcloud.common.profile.client_profile import ClientProfile
 from tencentcloud.common.profile.http_profile import HttpProfile

@@ -1,4 +1,4 @@
-from db_utils import *
+from mtms.db_utils import *
 
 
 def remove_all_spaces(s):

@@ -1,7 +1,7 @@
 import requests
 from time import sleep
 from parse import *
-from db_utils import *
+from mtms.db_utils import *
 from urllib.parse import urlencode
 
 

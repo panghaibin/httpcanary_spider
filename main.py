@@ -27,7 +27,7 @@ def unzip(zip_file):
     return extract_path
 
 
-def save_to_db(path):
+def save_to_mtms_db(path):
     parse_dir_result = ParseDir(path)
     mtms = MTMSParser(parse_dir_result)
     mtms.save_all()
@@ -45,7 +45,7 @@ def httpcanary():
             f2.write(request.get_data())
         path = unzip(zip_name)
         print(path)
-        save_to_db(path)
+        # save_to_mtms_db(path)
 
     return 'ok'
 
